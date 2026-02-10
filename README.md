@@ -14,6 +14,7 @@ A minimal Node.js project demonstrating end-to-end integration between **GitHub 
 | **VCS info** | Git commit, branch, and URL are captured in build-info |
 | **Xray scan** | Optional build scan (enable via repo variable) |
 | **Build promotion** | Optional script to promote builds to a target repo |
+| **Frogbot PR scan** | Scans PRs for vulnerabilities, comments with remediation and next steps |
 
 ## Architecture
 
@@ -142,6 +143,23 @@ In your GitHub repo: **Settings → Secrets and variables → Actions**
 2. Ensure Xray is configured and policies exist
 3. Workflows will run `jf build-scan` after build-info publish
 
+### 7. Frogbot: PR Security Scanning
+
+Frogbot scans all pull requests targeting `main` and comments with vulnerabilities, remediation, and next steps.
+
+**Prerequisites:** Same secrets as CI (`JF_URL`, `JF_ACCESS_TOKEN`). Xray must be available on your JFrog platform.
+
+**How it works:**
+
+1. When a PR is opened or updated targeting `main`, the **Frogbot Scan Pull Request** workflow runs
+2. Frogbot scans dependencies for vulnerabilities using JFrog Xray
+3. It posts comments on the PR with:
+   - Detected vulnerabilities (CVE, severity)
+   - Remediation steps (e.g., upgrade to a fixed version)
+   - Next steps for the developer
+
+**Config:** `.frogbot/frogbot-config.yml` customizes the scan (install command, working dirs). Edit as needed for your project structure.
+
 ## Local Developer Flow
 
 ### Scripts
@@ -194,8 +212,11 @@ BUILD_NAME=github-jfrog-demo BUILD_NUMBER=42 TARGET_REPO=release-local ./scripts
 .
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml          # CI: install, test, build-info
-│       └── publish.yml     # Publish: build, publish package, build-info
+│       ├── ci.yml               # CI: install, test, publish, build-info
+│       ├── frogbot-scan-pr.yml  # Frogbot: scan PRs for vulnerabilities
+│       └── publish.yml         # Publish: build, publish package, build-info
+├── .frogbot/
+│   └── frogbot-config.yml  # Frogbot scan configuration
 ├── scripts/
 │   ├── jfrog-local.sh      # Local JFrog install/build/publish
 │   ├── jfrog-verify.sh     # Verify setup, clear cache, force resolve via Artifactory
@@ -241,6 +262,14 @@ BUILD_NAME=github-jfrog-demo BUILD_NUMBER=42 TARGET_REPO=release-local ./scripts
 | demo-npm-remote empty | Remote repos cache on first use; cache may be in `*-cache` repo | Check **demo-npm-remote-cache** (not the remote itself) for cached packages |
 | Still empty after install | Virtual repo missing or misconfigured | Create virtual repo `demo-npm` that includes `demo-npm-remote` + `demo-npm-local` |
 | npm using local cache | Packages never fetched through Artifactory | Run `./scripts/jfrog-verify.sh` to clear cache and force resolve via Artifactory |
+
+### Frogbot
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Frogbot doesn't comment | Missing permissions or tokens | Ensure `JF_URL`, `JF_ACCESS_TOKEN` secrets; `pull-requests: write` permission |
+| Scan fails on npm install | Node version mismatch | Frogbot workflow uses Node 20; align with `.nvmrc` if needed |
+| No vulnerabilities shown | Xray not configured / no policies | Xray must be available on your JFrog platform |
 
 ### Other
 
