@@ -76,13 +76,11 @@ do_publish() {
   configure_jfrog
   setup_npm_project_config "$JF_NPM_VIRTUAL" "$JF_NPM_LOCAL"
   echo "Adding VCS info..."
-  jf build-info add-git --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER" --dotenv-path .
+  jf rt build-add-git "$BUILD_NAME" "$BUILD_NUMBER" .
   echo "Publishing package..."
   jf npm publish --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
-  echo "Creating build-info..."
-  jf build-info create --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
   echo "Publishing build-info..."
-  jf build-info publish --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
+  jf rt build-publish "$BUILD_NAME" "$BUILD_NUMBER"
   echo "Done. Build $BUILD_NAME/$BUILD_NUMBER published."
 }
 
@@ -92,7 +90,7 @@ do_scan() {
     return
   fi
   echo "Running Xray scan..."
-  jf build scan "$BUILD_NAME" "$BUILD_NUMBER"
+  jf build-scan "$BUILD_NAME" "$BUILD_NUMBER"
 }
 
 CMD="${1:-all}"

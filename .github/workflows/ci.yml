@@ -67,17 +67,13 @@ jobs:
 
       - name: Add VCS info to build-info
         run: |
-          jf build-info add-git \
-            --build-name "${{ github.event.repository.name }}" \
-            --build-number "${{ github.run_number }}" \
-            --dotenv-path .
+          jf rt build-add-git "${{ github.event.repository.name }}" "${{ github.run_number }}" .
 
-      - name: Create and publish build-info
+      - name: Publish build-info
         run: |
-          jf build-info create --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
-          jf build-info publish --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
+          jf rt build-publish "${{ github.event.repository.name }}" "${{ github.run_number }}"
 
       - name: Xray scan (optional)
         if: ${{ vars.JF_XRAY_SCAN_ENABLED == 'true' }}
         run: |
-          jf build scan "${{ github.event.repository.name }}" "${{ github.run_number }}"
+          jf build-scan "${{ github.event.repository.name }}" "${{ github.run_number }}"

@@ -27,9 +27,9 @@ A minimal Node.js project demonstrating end-to-end integration between **GitHub 
 │  • setup Node + JFrog CLI      │  • setup Node + JFrog CLI                  │
 │  • jf npm install (virtual)    │  • jf npm install                          │
 │  • npm test                    │  • npm test                                │
-│  • build-info add-git          │  • jf npm publish → local repo             │
-│  • build-info publish          │  • build-info publish                      │
-│  • [optional] jf build scan    │  • [optional] jf build scan                │
+│  • jf rt build-add-git         │  • jf npm publish → local repo             │
+│  • jf rt build-publish         │  • jf rt build-publish                      │
+│  • [optional] jf build-scan    │  • [optional] jf build-scan                │
 └─────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
@@ -140,7 +140,7 @@ In your GitHub repo: **Settings → Secrets and variables → Actions**
 
 1. Add variable `JF_XRAY_SCAN_ENABLED` = `true`
 2. Ensure Xray is configured and policies exist
-3. Workflows will run `jf build scan` after build-info publish
+3. Workflows will run `jf build-scan` after build-info publish
 
 ## Local Developer Flow
 
@@ -230,9 +230,9 @@ BUILD_NAME=github-jfrog-demo BUILD_NUMBER=42 TARGET_REPO=release-local ./scripts
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Build not in Artifactory | Build-info publish failed | Check workflow logs; ensure `jf build-info create` runs before `publish` |
+| Build not in Artifactory | Build-info publish failed | Check workflow logs; ensure `jf rt build-publish` runs after `jf rt build-add-git` |
 | Empty build | No install with build-name/number | `jf npm install` must include `--build-name` and `--build-number` |
-| Missing VCS info | add-git not run | Run `jf build-info add-git` with `--dotenv-path .` and full git history (fetch-depth: 0) |
+| Missing VCS info | add-git not run | Run `jf rt build-add-git <build-name> <build-number> .` with full git history (fetch-depth: 0) |
 
 ### Remote/virtual repo showing empty
 
