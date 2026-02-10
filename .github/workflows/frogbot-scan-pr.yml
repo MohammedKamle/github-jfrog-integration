@@ -16,6 +16,8 @@ permissions:
 jobs:
   scan-pull-request:
     runs-on: ubuntu-latest
+    # Frogbot requires a GitHub Environment named 'frogbot'. Create it in Settings → Environments.
+    environment: frogbot
     steps:
       - uses: actions/checkout@v4
         with:
