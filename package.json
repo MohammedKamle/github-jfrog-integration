@@ -1,0 +1,30 @@
+{
+  "name": "@myorg/github-jfrog-demo",
+  "version": "1.0.0",
+  "description": "Node.js demo project for GitHub ⇄ JFrog Artifactory integration",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test src/index.test.js",
+    "lint": "node --check src/index.js 2>/dev/null || true",
+    "build": "node -e \"console.log('Build complete')\"",
+    "jf:install": "jf npm install",
+    "jf:build-info": "jf npm build-info create",
+    "jf:publish": "jf npm publish"
+  },
+  "keywords": [
+    "jfrog",
+    "artifactory",
+    "github-actions",
+    "npm"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "devDependencies": {}
+}

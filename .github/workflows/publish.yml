@@ -1,0 +1,83 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  JF_NPM_VIRTUAL: ${{ vars.JF_NPM_VIRTUAL || 'npm-virtual' }}
+  JF_NPM_LOCAL: ${{ vars.JF_NPM_LOCAL || 'npm-local' }}
+  NODE_VERSION: '20'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          version: 2
+
+      - name: Configure JFrog
+        env:
+          JF_URL: ${{ secrets.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+          JF_USER: ${{ secrets.JF_USER }}
+          JF_API_KEY: ${{ secrets.JF_API_KEY }}
+        run: |
+          if [ -n "$JF_ACCESS_TOKEN" ]; then
+            jf c add gh-publish --url "$JF_URL" --access-token "$JF_ACCESS_TOKEN" --interactive=false
+          else
+            jf c add gh-publish --url "$JF_URL" --user "$JF_USER" --password "$JF_API_KEY" --interactive=false
+          fi
+          jf c use gh-publish
+
+      - name: Configure npm for JFrog
+        run: |
+          jf npm config --global --repo-resolve "$JF_NPM_VIRTUAL" --repo-deploy "$JF_NPM_LOCAL" --server-id-resolve gh-publish --server-id-deploy gh-publish
+          # For scoped packages (@myorg), add: --scope=@myorg
+
+      - name: Set version from release (if release event)
+        if: github.event_name == 'release'
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          npm version "$VERSION" --no-git-commit --allow-same-version
+
+      - name: Install dependencies
+        run: jf npm install --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
+
+      - name: Run tests
+        run: npm test
+
+      - name: Add VCS info to build-info
+        run: |
+          jf build-info add-git \
+            --build-name "${{ github.event.repository.name }}" \
+            --build-number "${{ github.run_number }}" \
+            --dotenv-path .
+
+      - name: Publish package to Artifactory
+        run: jf npm publish --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
+
+      - name: Create and publish build-info
+        run: |
+          jf build-info create --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
+          jf build-info publish --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
+
+      - name: Xray scan (optional)
+        if: ${{ vars.JF_XRAY_SCAN_ENABLED == 'true' }}
+        run: |
+          jf build scan "${{ github.event.repository.name }}" "${{ github.run_number }}"
