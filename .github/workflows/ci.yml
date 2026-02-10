@@ -12,7 +12,50 @@ env:
   NODE_VERSION: '20'
 
 jobs:
+  # Step 1: Security scan (Xray) - must pass before CI runs
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
+        with:
+          version: 2.91.0
+
+      - name: Configure JFrog
+        env:
+          JF_URL: ${{ secrets.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+          JF_USER: ${{ secrets.JF_USER }}
+          JF_API_KEY: ${{ secrets.JF_API_KEY }}
+        run: |
+          if [ -n "$JF_ACCESS_TOKEN" ]; then
+            jf c add gh-ci --url "$JF_URL" --access-token "$JF_ACCESS_TOKEN" --interactive=false
+          else
+            jf c add gh-ci --url "$JF_URL" --user "$JF_USER" --password "$JF_API_KEY" --interactive=false
+          fi
+          jf c use gh-ci
+
+      - name: Install dependencies for audit
+        run: npm install
+
+      - name: Security scan (Xray)
+        run: jf audit --npm --fail
+        env:
+          JF_URL: ${{ secrets.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+
+  # Step 2: CI - runs only if security-scan passes
   ci:
+    needs: security-scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
