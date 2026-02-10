@@ -46,8 +46,17 @@ jobs:
 
       - name: Configure npm for JFrog
         run: |
-          jf npm config --global --repo-resolve "$JF_NPM_VIRTUAL" --repo-deploy "$JF_NPM_LOCAL" --server-id-resolve gh-publish --server-id-deploy gh-publish
-          # For scoped packages (@myorg), add: --scope=@myorg
+          mkdir -p .jfrog/projects
+          cat > .jfrog/projects/npm.yaml << EOF
+          version: 1
+          type: npm
+          resolver:
+              repo: ${JF_NPM_VIRTUAL}
+              serverId: gh-publish
+          deployer:
+              repo: ${JF_NPM_LOCAL}
+              serverId: gh-publish
+          EOF
 
       - name: Set version from release (if release event)
         if: github.event_name == 'release'

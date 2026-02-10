@@ -47,8 +47,14 @@ jobs:
 
       - name: Configure npm for JFrog
         run: |
-          jf npm config --global --repo-resolve "$JF_NPM_VIRTUAL" --server-id-resolve gh-ci
-          # For scoped packages (@myorg), add: --scope=@myorg
+          mkdir -p .jfrog/projects
+          cat > .jfrog/projects/npm.yaml << EOF
+          version: 1
+          type: npm
+          resolver:
+              repo: ${JF_NPM_VIRTUAL}
+              serverId: gh-ci
+          EOF
 
       - name: Install dependencies
         run: jf npm install --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
