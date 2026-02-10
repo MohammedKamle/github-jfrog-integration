@@ -54,6 +54,9 @@ jobs:
           resolver:
               repo: ${JF_NPM_VIRTUAL}
               serverId: gh-ci
+          deployer:
+              repo: ${JF_NPM_LOCAL}
+              serverId: gh-ci
           EOF
 
       - name: Install dependencies
@@ -68,6 +71,9 @@ jobs:
       - name: Add VCS info to build-info
         run: |
           jf rt build-add-git "${{ github.event.repository.name }}" "${{ github.run_number }}" .
+
+      - name: Publish package to Artifactory
+        run: jf npm publish --build-name "${{ github.event.repository.name }}" --build-number "${{ github.run_number }}"
 
       - name: Publish build-info
         run: |
