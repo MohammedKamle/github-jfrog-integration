@@ -1,0 +1,90 @@
+# Manually trigger this workflow to automate the Frogbot demo flow:
+# 1. Create a branch from feature/payment-integration
+# 2. Push the branch
+# 3. Open a PR targeting main → Frogbot scans automatically
+
+name: "Frogbot Demo (Manual)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: "Name for the demo branch"
+        required: false
+        default: "demo/frogbot-scan"
+      source_branch:
+        description: "Branch to create demo from"
+        required: false
+        default: "feature/payment-integration"
+      pr_title:
+        description: "Pull request title"
+        required: false
+        default: "Demo: Frogbot security scan"
+      add_trivial_change:
+        description: "Add a trivial change to trigger scan"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-demo-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push demo branch
+        run: |
+          SOURCE="${{ github.event.inputs.source_branch }}"
+          BRANCH="${{ github.event.inputs.branch_name }}"
+          # Make default branch unique per run to support repeated demos
+          if [ "$BRANCH" = "demo/frogbot-scan" ]; then
+            BRANCH="demo/frogbot-scan-${{ github.run_id }}"
+          fi
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          
+          # Ensure we have the source branch
+          git fetch origin "$SOURCE"
+          git checkout -b "$BRANCH" "origin/$SOURCE"
+          
+          # Optionally add a trivial change
+          if [ "${{ github.event.inputs.add_trivial_change }}" = "true" ]; then
+            echo "" >> README.md
+            echo "<!-- Frogbot demo branch created at $(date -u +%Y-%m-%dT%H:%M:%SZ) -->" >> README.md
+            git add README.md
+            git commit -m "chore: trigger Frogbot demo scan"
+          fi
+          
+          git push -u origin "$BRANCH"
+
+      - name: Create pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "${{ github.event.inputs.pr_title }}" \
+            --body "Automated Frogbot demo PR. Frogbot will scan and comment with security findings.")
+          echo "url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "Created PR: $PR_URL"
+
+      - name: Summary
+        run: |
+          echo "### Frogbot demo complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "PR: ${{ steps.pr.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Frogbot will automatically scan the PR and post security findings." >> $GITHUB_STEP_SUMMARY

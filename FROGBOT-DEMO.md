@@ -10,6 +10,15 @@ This guide walks through how to demo **Frogbot** (JFrog's security scanner for p
 
 ## Demo Steps
 
+### Option A: Automated (recommended)
+
+1. Go to **Actions** → **Frogbot Demo (Manual)** → **Run workflow**
+2. (Optional) Edit inputs: branch name, source branch, PR title
+3. Click **Run workflow**
+4. The workflow creates a branch from `feature/payment-integration`, pushes it, and opens a PR. Frogbot scans automatically.
+
+### Option B: Manual
+
 ### 1. Create a new branch from `feature/payment-integration`
 
 ```bash
