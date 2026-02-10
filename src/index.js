@@ -3,7 +3,7 @@
  * Minimal Express server for GitHub ⇄ JFrog integration demo.
  * Serves a health check and a simple info endpoint.
  */
-
+// Circuit Breaker via Resilience4j
 const express = require('express');
 const _ = require('lodash');
 const app = express();
