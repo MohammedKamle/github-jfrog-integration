@@ -27,6 +27,7 @@ build/
 
 # JFrog CLI
 .jfrog/
+.npmrc
 
 # Coverage
 coverage/

@@ -198,7 +198,8 @@ BUILD_NAME=github-jfrog-demo BUILD_NUMBER=42 TARGET_REPO=release-local ./scripts
 │       └── publish.yml     # Publish: build, publish package, build-info
 ├── scripts/
 │   ├── jfrog-local.sh      # Local JFrog install/build/publish
-│   └── jfrog-promote.sh   # Optional build promotion
+│   ├── jfrog-verify.sh     # Verify setup, clear cache, force resolve via Artifactory
+│   └── jfrog-promote.sh    # Optional build promotion
 ├── src/
 │   ├── index.js            # Express app
 │   └── index.test.js       # Unit tests
@@ -233,13 +234,13 @@ BUILD_NAME=github-jfrog-demo BUILD_NUMBER=42 TARGET_REPO=release-local ./scripts
 | Empty build | No install with build-name/number | `jf npm install` must include `--build-name` and `--build-number` |
 | Missing VCS info | add-git not run | Run `jf build-info add-git` with `--dotenv-path .` and full git history (fetch-depth: 0) |
 
-### Repo naming
+### Remote/virtual repo showing empty
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| 404 resolving packages | Wrong virtual repo name | Set `JF_NPM_VIRTUAL` to your actual virtual repo key |
-| 404 on publish | Wrong local repo name | Set `JF_NPM_LOCAL` to your actual local repo key |
-| npm-virtual vs npm | Repo key differs from URL path | Use repo key (e.g. `npm-virtual`), not URL path |
+| demo-npm-remote empty | Remote repos cache on first use; cache may be in `*-cache` repo | Check **demo-npm-remote-cache** (not the remote itself) for cached packages |
+| Still empty after install | Virtual repo missing or misconfigured | Create virtual repo `demo-npm` that includes `demo-npm-remote` + `demo-npm-local` |
+| npm using local cache | Packages never fetched through Artifactory | Run `./scripts/jfrog-verify.sh` to clear cache and force resolve via Artifactory |
 
 ### Other
 

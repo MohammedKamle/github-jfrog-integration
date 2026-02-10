@@ -38,9 +38,31 @@ configure_jfrog() {
   jf c use local
 }
 
+# Create/update project-level npm config (JFrog CLI v2+ uses this instead of 'jf npm config')
+setup_npm_project_config() {
+  local resolve_repo="$1"
+  local deploy_repo="${2:-}"
+  mkdir -p .jfrog/projects
+  cat > .jfrog/projects/npm.yaml << EOF
+version: 1
+type: npm
+resolver:
+    repo: ${resolve_repo}
+    serverId: local
+EOF
+  if [ -n "$deploy_repo" ]; then
+    cat >> .jfrog/projects/npm.yaml << EOF
+deployer:
+    repo: ${deploy_repo}
+    serverId: local
+EOF
+  fi
+  echo "Created .jfrog/projects/npm.yaml (resolve: $resolve_repo${deploy_repo:+, deploy: $deploy_repo})"
+}
+
 do_install() {
   configure_jfrog
-  jf npm config --global --repo-resolve "$JF_NPM_VIRTUAL" --server-id-resolve local
+  setup_npm_project_config "$JF_NPM_VIRTUAL"
   echo "Installing dependencies via JFrog..."
   jf npm install --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER"
 }
@@ -52,7 +74,7 @@ do_test() {
 
 do_publish() {
   configure_jfrog
-  jf npm config --global --repo-resolve "$JF_NPM_VIRTUAL" --repo-deploy "$JF_NPM_LOCAL" --server-id-resolve local --server-id-deploy local
+  setup_npm_project_config "$JF_NPM_VIRTUAL" "$JF_NPM_LOCAL"
   echo "Adding VCS info..."
   jf build-info add-git --build-name "$BUILD_NAME" --build-number "$BUILD_NUMBER" --dotenv-path .
   echo "Publishing package..."
