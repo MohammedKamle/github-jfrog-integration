@@ -1,0 +1,41 @@
+# Frogbot scans pull requests for security vulnerabilities using JFrog Xray.
+# It comments on PRs with remediation advice, next steps, and CVE details.
+# Docs: https://jfrog.com/help/r/jfrog-security-user-guide/shift-left-on-security/frogbot
+
+name: "Frogbot Scan Pull Request"
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  scan-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: jfrog/frogbot@v2
+        env:
+          # [Mandatory] JFrog platform URL
+          JF_URL: ${{ secrets.JF_URL }}
+
+          # [Mandatory] JFrog access token with 'read' permissions on Xray
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+
+          # [Mandatory] GitHub token for posting comments on PRs
+          JF_GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # [Optional] Install command for npm projects (Frogbot needs dependency tree for scanning)
+          JF_INSTALL_DEPS_CMD: "npm install"

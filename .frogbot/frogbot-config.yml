@@ -1,0 +1,14 @@
+# Frogbot configuration for security scanning.
+# Docs: https://jfrog.com/help/r/jfrog-security-user-guide/developers/frogbot/configure-frogbot
+#
+# Frogbot will:
+# - Scan dependencies for vulnerabilities (SCA)
+# - Comment on PRs with remediation and next steps
+# - Support CVE contextual analysis for applicable vulnerabilities
+
+- params:
+    scan:
+      projects:
+        - installCommand: "npm install"
+          workingDirs:
+            - "."
