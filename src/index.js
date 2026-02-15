@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Minimal Express server for GitHub ⇄ JFrog integration demo.
- * Serves a health check and a simple info endpoint.
+ * Serves a health check and a simple infssso endpoint.
  */
 
 const express = require('express');
